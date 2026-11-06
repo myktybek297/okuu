@@ -1,0 +1,914 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Сүйлөм толуктоо</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Manrope:wght@500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,700&display=swap">
+<style>
+/* Layout: one narrow column for lists and analogy tests. Reading tests widen to two panes on large screens: passage on the left (own scroll), questions on the right. */
+:root {
+  --bg: #F3F4FB;
+  --surface: #FFFFFF;
+  --fg: #161A33;
+  --muted: #5B6285;
+  --line: #DDE0F0;
+  --accent: #3F4FC9;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E6E9FD;
+  --mark: #E0731A;
+  --ok: #17703A;
+  --ok-bg: #E1F2E7;
+  --bad: #B3261E;
+  --bad-bg: #FAE6E4;
+  --warn-bg: #FFF1CC;
+  --warn-fg: #664700;
+  --f-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --f-disp: 'Manrope', 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --f-read: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --r: 18px;
+  --shadow: 0 1px 2px rgba(30,40,90,.06), 0 8px 24px -12px rgba(30,40,90,.18);
+  --head-h: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1226; --surface: #181C38; --fg: #E8EAFB; --muted: #9AA2CC; --line: #2A3059;
+    --accent: #8E9BFF; --accent-ink: #0B1033; --accent-soft: #232A5C; --mark: #FFB066;
+    --ok: #6FD18C; --ok-bg: #14301F; --bad: #FF8A80; --bad-bg: #3A1815;
+    --warn-bg: #3A2D0B; --warn-fg: #F1CE7A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1226; --surface: #181C38; --fg: #E8EAFB; --muted: #9AA2CC; --line: #2A3059;
+  --accent: #8E9BFF; --accent-ink: #0B1033; --accent-soft: #232A5C; --mark: #FFB066;
+  --ok: #6FD18C; --ok-bg: #14301F; --bad: #FF8A80; --bad-bg: #3A1815;
+  --warn-bg: #3A2D0B; --warn-fg: #F1CE7A;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+img, svg, video, canvas { max-width: 100%; height: auto; }
+body {
+  background: linear-gradient(180deg, var(--accent-soft) 0, var(--bg) 280px) no-repeat, var(--bg); color: var(--fg);
+  font: 400 1rem/1.55 var(--f-ui);
+  overflow-wrap: break-word;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--accent-soft); }
+.wrap {
+  max-width: 720px; margin: 0 auto;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Home */
+.hero { display: grid; gap: 10px; padding: 12px 0 22px; }
+.kicker { font-size: .78rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.hero h1 { font: 700 clamp(1.9rem, 6vw, 2.6rem)/1.1 var(--f-disp); }
+.hero p { color: var(--muted); max-width: 52ch; }
+.secs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 14px; }
+.sec {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 18px;
+  display: grid; gap: 14px; align-content: start; text-align: left; min-width: 0; width: 100%;
+}
+.sec { box-shadow: var(--shadow); }
+.sec:hover { border-color: var(--accent); transform: translateY(-2px); }
+.tile, .card, .score, .qcard, .pane-text { box-shadow: var(--shadow); }
+.sec h2 { font: 700 1.6rem/1.15 var(--f-disp); }
+.sec .desc { color: var(--muted); }
+.sec .stats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr)); gap: 12px; }
+.tiles.wide { grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.tile {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 16px; display: grid; gap: 12px; align-content: start; text-align: left; min-width: 0;
+}
+.tile .num { font: 700 2.1rem/1 var(--f-disp); color: var(--accent); }
+.tile h3 { font: 700 1.15rem/1.25 var(--f-disp); }
+.tile .meta { color: var(--muted); font-size: .9rem; }
+.tile .best { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile:hover { border-color: var(--accent); }
+.btn {
+  box-shadow: 0 6px 14px -8px var(--accent);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; border-radius: 999px; border: 1.5px solid var(--accent);
+  background: var(--accent); color: var(--accent-ink); font-weight: 600; min-height: 44px;
+}
+.btn.ghost { background: transparent; color: var(--accent); box-shadow: none; }
+.btn.sm { min-height: 40px; padding: 8px 14px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.legend { margin-top: 22px; padding: 14px 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: .92rem; }
+.legend b { color: var(--fg); }
+.list-head { display: grid; gap: 6px; margin-bottom: 18px; }
+.list-head h1 { font: 700 clamp(1.7rem, 5vw, 2.2rem)/1.15 var(--f-disp); }
+.list-head p { color: var(--muted); }
+
+/* Analogy quiz */
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin-bottom: 14px; }
+.link { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 8px 0; min-height: 44px; }
+.count { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+.dots { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 16px; }
+.dot {
+  min-width: 0; min-height: 2.5rem; border-radius: 8px; border: 1.5px solid var(--line);
+  background: var(--surface); font-size: .8rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); padding: 0;
+}
+.dot.cur { border-color: var(--accent); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.dot.ok { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+.dot.bad { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 18px; display: grid; gap: 16px; }
+.eyebrow { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.lead { color: var(--muted); font-size: .92rem; }
+.stem { padding: 14px 16px; border-radius: 10px; background: var(--accent-soft); }
+.pair { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.pc { color: var(--mark); font-weight: 700; }
+.stem .pair { font: 700 clamp(1.45rem, 5.2vw, 2rem)/1.25 var(--f-disp); overflow-wrap: anywhere; }
+.stem .pc { font-size: 1.15em; }
+.opts { display: grid; gap: 10px; }
+.opt {
+  display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 10px; align-items: baseline;
+  width: 100%; text-align: left; padding: 12px 14px; border-radius: 10px;
+  border: 1.5px solid var(--line); background: var(--surface); min-height: 48px;
+}
+.opt:hover { border-color: var(--accent); }
+.opt .ltr {
+  display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%;
+  border: 1.5px solid var(--line); font-weight: 600; font-size: .9rem; align-self: center;
+}
+.opt .pair { font: 500 1.08rem/1.35 var(--f-disp); overflow-wrap: anywhere; }
+.opt.locked { cursor: default; }
+.opt.locked:hover { border-color: var(--line); }
+.opt.ok { border-color: var(--ok); background: var(--ok-bg); }
+.opt.ok .ltr { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.opt.bad { border-color: var(--bad); background: var(--bad-bg); }
+.opt.bad .ltr { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.opt.dim { opacity: .62; }
+.opt .tag { grid-column: 2; font: 600 .8rem var(--f-ui); }
+.opt.ok .tag { color: var(--ok); }
+.opt.bad .tag { color: var(--bad); }
+
+.fb { border-radius: var(--r); padding: 16px; display: grid; gap: 10px; border: 1.5px solid var(--line); }
+.fb.ok { border-color: var(--ok); background: var(--ok-bg); }
+.fb.bad { border-color: var(--bad); background: var(--bad-bg); }
+.verdict { font-weight: 700; font-size: 1.1rem; }
+.fb.ok .verdict { color: var(--ok); }
+.fb.bad .verdict { color: var(--bad); }
+.why-h { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.rel { font-weight: 600; }
+.why { max-width: 66ch; }
+.note { padding: 10px 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: .92rem; }
+.note.warn { background: var(--warn-bg); color: var(--warn-fg); border-color: transparent; }
+.note b { font-weight: 600; }
+.nav { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+.score { display: grid; gap: 12px; padding: 20px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 16px; }
+.score .big { font: 700 clamp(2.6rem, 11vw, 3.6rem)/1 var(--f-disp); font-variant-numeric: tabular-nums; color: var(--accent); }
+.meter { height: 10px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.meter > i { display: block; height: 100%; background: var(--accent); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 8px; margin: 18px 0 12px; flex-wrap: wrap; }
+.tab { padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 600; min-height: 40px; }
+.tab[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.rev { display: grid; gap: 10px; }
+details.item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+details.item > summary {
+  list-style: none; cursor: pointer; padding: 12px 14px; display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto; gap: 10px; align-items: baseline;
+}
+details.item > summary::-webkit-details-marker { display: none; }
+.qn { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+details.item .pair { font: 700 1.1rem/1.3 var(--f-disp); overflow-wrap: anywhere; }
+.chip { font-size: .78rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.chip.ok { background: var(--ok-bg); color: var(--ok); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.skip { background: var(--line); color: var(--muted); }
+.item .body { padding: 2px 14px 14px; display: grid; gap: 10px; }
+.ans { display: grid; gap: 4px; font-size: .95rem; }
+.ans .pair { font: 500 1.02rem/1.35 var(--f-disp); }
+.ans b { font-weight: 600; }
+
+.timer.sm { font-size: 1rem; padding: 6px 10px; min-width: 4.4rem; }
+.gt { white-space: pre-line; overflow-wrap: anywhere; }
+.gt u { text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.opt .gt { font: 500 1.05rem/1.4 var(--f-disp); }
+.gr .stem .gt { font: 600 1.2rem/1.5 var(--f-disp); }
+details.item .gt { font: 600 1rem/1.35 var(--f-disp); }
+
+.gate { max-width: 26rem; margin: 8vh auto 0; }
+.gate h1 { font: 700 clamp(1.7rem, 6vw, 2.2rem)/1.15 var(--f-disp); }
+.code { width: 100%; font: 700 2rem/1 var(--f-ui); letter-spacing: .5em; text-align: center; padding: 14px 8px 14px calc(8px + .5em); border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--fg); font-variant-numeric: tabular-nums; }
+.cerr { color: var(--bad); font-weight: 600; min-height: 1.4em; }
+
+/* Reading comprehension */
+.intro-card { display: grid; gap: 14px; }
+.intro-card h1 { font: 700 clamp(1.6rem, 5vw, 2.2rem)/1.15 var(--f-disp); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fact { padding: 6px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.rules { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; color: var(--muted); }
+.rc-head {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--line);
+  display: grid; gap: 8px;
+}
+.rc-row { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.rc-title { font: 700 1.05rem/1.25 var(--f-disp); min-width: 0; flex: 1 1 10rem; }
+.timer {
+  font: 700 1.35rem/1 var(--f-ui); font-variant-numeric: tabular-nums; padding: 8px 12px; border-radius: 10px;
+  background: var(--accent-soft); color: var(--accent); min-width: 5.2rem; text-align: center;
+}
+.timer.warn { background: var(--warn-bg); color: var(--warn-fg); }
+.timer.bad { background: var(--bad-bg); color: var(--bad); }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 8px 14px; font-weight: 600; min-height: 40px; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.rc-switch { display: flex; }
+.rc-switch .seg { width: 100%; }
+.rc-switch .seg button { flex: 1 1 0; }
+.confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-radius: 10px; background: var(--warn-bg); color: var(--warn-fg); }
+.confirm p { flex: 1 1 14rem; font-weight: 600; }
+.rc-body { display: grid; gap: 16px; }
+.pane-text, .pane-q { min-width: 0; }
+.pane-text { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 14px; display: grid; gap: 14px; align-content: start; }
+.pane-q { display: grid; gap: 14px; align-content: start; }
+.tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.tools .lbl { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.ptitle { font: 700 1.35rem/1.2 var(--f-disp); }
+.psrc { color: var(--muted); font-size: .9rem; }
+.pint { font: italic 400 1rem/1.55 var(--f-read); color: var(--muted); }
+.plabel { font-weight: 700; color: var(--accent); padding-top: 4px; }
+.pnote { font-size: .85rem; color: var(--warn-fg); background: var(--warn-bg); padding: 8px 10px; border-radius: 8px; }
+.passage { display: grid; gap: 8px; min-width: 0; }
+.lines { overflow-x: auto; font: 400 clamp(.84rem, 1.6vw + .45rem, 1.05rem)/1.75 var(--f-read); padding-bottom: 4px; }
+.ln { display: flex; gap: 10px; align-items: baseline; }
+.ln .num { flex: none; width: 2.4rem; text-align: right; color: var(--accent); font: 600 .75rem var(--f-ui); font-variant-numeric: tabular-nums; }
+.ln .tx { white-space: pre; }
+.flow p { margin: 0 0 .8em; font: 400 1.04rem/1.75 var(--f-read); text-wrap: pretty; }
+.flow sup.mk { font: 600 .66rem var(--f-ui); color: var(--accent); margin: 0 .25em 0 .35em; vertical-align: super; }
+.qcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 14px; display: grid; gap: 12px; min-width: 0; }
+.qcard.done { border-color: var(--accent); }
+.qhead { display: flex; align-items: center; gap: 10px; }
+.qbadge { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+.qstem { white-space: pre-line; font: 600 1.02rem/1.5 var(--f-disp); }
+.ropts { display: grid; gap: 8px; }
+.ropt {
+  display: grid; grid-template-columns: 1.9rem minmax(0, 1fr); gap: 10px; align-items: baseline; text-align: left; width: 100%;
+  padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); min-height: 46px;
+}
+.ropt .ltr { display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; border: 1.5px solid var(--line); font-weight: 600; font-size: .85rem; align-self: start; }
+.ropt .ot { overflow-wrap: anywhere; }
+button.ropt:hover { border-color: var(--accent); }
+.ropt.sel { border-color: var(--accent); background: var(--accent-soft); }
+.ropt.sel .ltr { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.ropt.ok { border-color: var(--ok); background: var(--ok-bg); }
+.ropt.ok .ltr { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.ropt.bad { border-color: var(--bad); background: var(--bad-bg); }
+.ropt.bad .ltr { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.ropt .tag { grid-column: 2; font: 600 .8rem var(--f-ui); }
+.ropt.ok .tag { color: var(--ok); }
+.ropt.bad .tag { color: var(--bad); }
+.ropt .rs { grid-column: 2; font-size: .92rem; color: var(--muted); }
+.ropt.ok .rs, .ropt.bad .rs { color: var(--fg); }
+.exp { padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); display: grid; gap: 6px; }
+.exp .why { white-space: pre-line; }
+.review-text { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 14px; }
+.review-text > summary { cursor: pointer; padding: 12px 14px; font-weight: 600; min-height: 44px; }
+.review-text .pane-text { border: 0; border-top: 1px solid var(--line); border-radius: 0 0 12px 12px; }
+
+@media (max-width: 899px) {
+  .rc-body[data-pane="text"] .pane-q { display: none; }
+  .rc-body[data-pane="q"] .pane-text { display: none; }
+}
+@media (min-width: 900px) {
+  .rc-switch { display: none; }
+}
+@media (min-width: 1000px) {
+  body[data-view="rc"] .wrap { max-width: 82rem; }
+  .rc-body { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .rc-body .pane-text {
+    position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--head-h) + 8px);
+    max-height: calc(100vh - var(--head-h) - 28px); overflow-y: auto;
+  }
+}
+
+/* Responsive steps (320px and up) */
+@media (max-width: 479px) {
+  .card { padding: 16px 14px; }
+  .nav .btn { flex: 1 1 100%; }
+  .actions .btn { flex: 1 1 100%; }
+  details.item > summary { grid-template-columns: 2rem minmax(0, 1fr); }
+  details.item > summary .chip { grid-column: 2; justify-self: start; }
+  .tab { flex: 1 1 auto; }
+  .rc-title { flex-basis: 100%; }
+}
+@media (min-width: 480px) {
+  .dots { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .nav .btn { flex: 0 1 auto; }
+}
+@media (min-width: 640px) {
+  .secs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 600px) {
+  .wrap { padding-block: 32px 72px; }
+  .hero { padding: 20px 0 28px; }
+  .tile { padding: 20px; }
+  .sec { padding: 24px 22px; }
+  .card { padding: 26px 24px; gap: 18px; }
+  .stem { padding: 18px 20px; }
+  .score { padding: 26px 24px; }
+  details.item > summary { padding: 14px 18px; }
+  .item .body { padding: 2px 18px 18px; }
+  .qcard { padding: 20px 20px; }
+  .pane-text { padding: 20px 20px; }
+}
+@media (min-width: 900px) {
+  .wrap { max-width: 56rem; }
+  .opts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opt { height: 100%; }
+  .dot { min-height: 2.75rem; }
+}
+@media (min-width: 1200px) {
+  .wrap { max-width: 62rem; padding-block: 40px 88px; }
+  .tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .tiles.wide { grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .wrap { padding-block: 12px 32px; }
+  .hero { padding: 4px 0 14px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .opt, .ropt, .btn, .tile, .sec, .dot { transition: border-color .15s, background-color .15s; }
+}
+</style>
+
+<div class="wrap"><div id="app"></div></div>
+
+<script>
+const TESTS = [];
+const GR = [];
+const SC = [[{"s":"Ылакаптар_____ тил байлыгы_____. Себеби аларда элибиздин турмушка карата түрдүү көз карашы _____ .","o":["өзөктүү / болуп саналбайт / орун алган","жардамчы / болуп саналат / орун алган эмес","өзөктүү / болуп саналат / орун алган","жардамчы / болуп саналат / орун алышы мумкун эмес"],"k":2},{"s":"Эгер _____ ишеним же идеологиянын _____ кааласак, аны _____ менен алмаштыруу маселени чындап чечет.","o":["туура / зыяндарынан кутулууну / туура эмеси","туура эмес / зыяндарынан кутулууну /туурасы","туура эмес / пайдасын колдонууну /туурасы","туура / пайдасын колдонууну / туура змеси"],"k":1},{"s":"Планета калкынын өскөнүнө карабастан, көпчүлүк өлкөлөрдүн калкы _____, бул алардын өнүгүүсүнө_____ таасирин тийгизип, экономикалык коллапска апкелгени турат.","o":["көбөйүп / оң","азайып /терс","миграцияга кетип / терс","картайып/оң"],"k":1},{"s":"Адам баласы _____ жашаса, _____ жүргөн машинелер сыяктуу эле турмуш кырсыктарына _____ .","o":["эрежеге баш ийбей/ эрежеге баш ийбей /учурабайт","эрежеге баш ийбей/ эреже менен / учурайт","эреже менен / эреже менен / учурабайт","эреже менен / эрежеге баш ийбей / учурайт"],"k":2},{"s":"Эгерде сиз _____ чебердигиңизди _____, акча менен кызмат _____, сизге туш тараптан _____ жаайт.","o":["усталыкта / тастыктасаңыз / сизден дайыма качышат / акча","өз багытыңызда / тастыктасаңыз / сизге чуркашат / сунуш","өз кесибиңизде / көрсөтө алсаңыз /сизден дайыма качышат / кызмат","бизнесте / тастыктай албасаңыз / сизге чуркашат / акча"],"k":1},{"s":"Күндүн чыгышы менен жалбыракта тердөө процесси башталып, фотосинтез _____ баштайт. Түштөн кийин болсо, бул кубулуш тескериге айланат, б.а., фотосинтез _____, дем алуу _____, себеби температура жогорулаганда, тердөө да _____ . Түнкүсүн болсо, температура төмөндөгөнү үчүн тердөө жайлап, өсүмдүк эс алат.","o":["тездеп / жайлап / көбөйөт / күчөйт","жайлап / тездеп / азаят / жайлайт","тездеп/ жайлап / азаят / жайлайт","жайлап / жайлап / көбөйөт / күчөйт"],"k":0},{"s":"Мисалы, Дүйшөмбү шаарында Кытайдын камералары автоунаалар жүргөн жолдорго гана _____. Андыктан аларды парктар сыяктуу коомдук жайлардын ичинен да _____. Эгер булар _____ гана казамөлдөгөн камералар болсо, анда алар эмне үчүн _____ турат?","o":["орнотулган / тапса болот / адам кыймылын / эл эс ала турган парктарда","орнотулган эмес / табууга болбойт / адам кыймылын / эл эс ала турган парктарда","орнотулган / табууга болбойт / жол кыймылын / машина жүрүүчү жолдордо","орнотулган эмес / тапса болот / жол кыймылын / эл эс ала турган парктарда"],"k":3},{"s":"Грамматикабыздын терминдери дээрлик бүт бойдон илгери эне тилибизде жолукпаган _____ сөздөр экени белгилүү. Жасалма сөздөр болгону менен, бу сыяктуу терминдер кандай _____! Алар эне тилибиздеги нукура төл сөздөрдүн фонунда курулуш жагынан да, угулушу жагынан да _____.","o":["жаңы / таамай, кооз / тикенектей өөн учурайт.","жасалма / орой, угумсуз / кылчалык өөн учурабайт","жасалма / таамай, кооз / кылчалык өөн учурабайт","эски / орой, угумсуз / тикенектей өөн учурайт"],"k":2},{"s":"Өсүмдүктөрдүн жашоосуна жана өсүүсүнө түн менен күндүн ортосундагы температура айырмачылыгы таасирин _____. Кээ бир өсүмдүктөр күндүз _____, түнкүсүн _____ температураны каалашат. Кээ бирлери үчүн мындай айырмачылык _____.","o":["тийгизбейт / салкыныраак / ысыгыраак/маанилүү","тийгизет / ысыгыраак / салкыныраак /маанилүү эмес","тийгизбейт / ысыгыраак / маанилүү эмес","тийгизет / салкыныраак / ысыгыраак /маанилүү"],"k":1},{"s":"Өнүккөн мамлекеттердин дүйнөлүк табигый ресурстарды _____ менен пайдаланышы айлана-чөйрөнүн _____ алып келет. Ушунун негизинде коомчулук ичинде пайда болгон карама-каршылыктар мамлекеттик бийликтерди _____ мажбур кылат.","o":["ысырапкорчулук / сакталышына /чөйрөнү коргоoro","сарамжалдык / булганышына / чейрену коргоого","ысырапкорчулук / булганышына /тийиштүү чара көрүүгө","сарамжалдык / сакталышына / тийиштүү чара көрүүгө"],"k":2}],[{"s":"Эмне үчүн биздин балдар мугалимге «агай», «эжей» деп_____. Себеби алар мугалимден _____ эмес, _____ күйгөн адамын көргүсү келет.","o":["кайрылышат / бир тууганын /окутуучудай","кайрылышпайт / окутуучуну / бир тууганындай","кайрылышат / окутуучуну/ бир тууганындай","кайрылышпайт / бир тууганын /окутуучудай"],"k":2},{"s":"Кичинесинен балдарды сабырдуулукка, мээнеткечтикке, каниеттүүлүккө, ток пейилдикке, кайрымдуулукка үйрөтүшүбү керек. Мындай сапатка ээ _____ балдар бирөөнүн эсебинен жашоого _____, ак мээнети менен, өзүнүн эмгеги менен _____.","o":["болбогон / барат / жашоого көнет","болгон / барбайт/ жашоого кенет","болгон / барат / жашай албайт","болбогон / барбайт / жашай албайт"],"k":1},{"s":"Мурмач аттуу жөргөмүштү кумурскадан айырмалоо _____. Себеби аны _____ өзгөчөлүгү - _____ жуп буту. Жөргөмүш ал буттарын башынан жогору карай созуу менен кумурскалардын мурутуна окшоштуруп алат.","o":["өтө кыйын / айырмалаган / ашыкча","өте кыйын / окшоштурган / ашыкча","оңой эле / айырмалаган / кем","оңой эле / окшоштурган / кем"],"k":3},{"s":"Чиркей дароо эле ийнесин сайып кан _____, алгач алдыңкы курч жаагы менен терини _____алат. Бирок ийнесин сайганы адамга _____. Себеби ийнеси менен _____.","o":["сорот / тешип / сезилет / канды бат соруп алат","сорбойт / уктатып / билинбейт / терини оорутуп тилет","сорот/ачып / көрүнбөйт / терини чон тешип алат","сорбойт /тилип / сезилбейт / уктатуучу суюктук куят"],"k":1},{"s":"Балдар, силер да агаларыңардын \"ат токууру\" болуп, ар дайым _____.","o":["аларга жардам бергиле","аларды үлгү туткула","алардан үйрөнгүлө","алардан кем калышпагыла"],"k":0},{"s":"Ийгиликтин сыры дайымкы аракеттерде. Сиз каалагандай _____ учурда дароо _____, тескерисинче, _____ улантуу керек. Кылган аракетиңизден, эртеби-улантуу кечпи, сөзсүз түрдө майнап чыгарына ишенишиңиз керек.","o":["болбой калган / кыйын болуп кетпей /кичи пейил болууну","болгон / үмүттү үзүп салбай / аракет кылууну","болгон / кыйын болуп кетпей / кичи пейил болууну","болбой калган / үмүттү үзүп салбай /аракет кылууну"],"k":3},{"s":"Жакшы жазуучу бардык тарабынан: акылы менен жан дүйнөсүнүн бардык көрүнүшүнөн кызыктуу. Ал биздин кеңүлүбүздү көркөм чыгармасынын _____ менен эле эмес, _____ бардык _____ менен да _____ .","o":["сапаттуулугу / атүгүл / сапаттуу чыгармалары / бура алат","тажатмалыгы / жадагалса / тажатуучу сөздөрү / бура алат","тамашалуулугу / айрыкча / күлкүлүү окуялары / бура албайт","тартуу күчү / ошондой эле / күнүмдүк ишмердиги / бура алат"],"k":3},{"s":"Витамин А нын _____ нерв ткандарынын өзгөрүүсү пайда болот. Мындай өзгөрүүлөр кыймыл-аракеттин координа-циясын жоготуусуна жана булчуңдардын алсыздыгына алып келет. Ошондой эле бул витаминдин _____ тукумсуздук пайда болот, же болбосо тукум _____ болуп төрөлүшү мүмкүн.","o":["жетишсиздигинен / жетишсиздигинен /алсыз","жетишсиздигинен / ашкерелигинен /күчтүү","ашкерелигинен / ашкерелигинен / күчтүү","ашкерелигинен / жетишсиздигинен /алсыз"],"k":0},{"s":"Тилекке каршы, нанотехнология жаатындагы илимий изилдөөлөр азырынча _____ деңгээлде гана болуп жатат, аларды _____ колдонуу бул жылдыкта эмес, кийинки он жылдыкта ишке ашары божомолдонууда. Биздин бизнесмендер мындай _____ долбоорлорго оңой менен каражат жумшай беришпейт.","o":["практикалык / жашоодо / шектүү","теориялык / практикада / кымбат","лабораториялык / практикада / кыска мөөнөттүү","илимий / лабораторияда / жыйынтыксыз"],"k":1},{"s":"\"Боз чолок менен киши экен, болбосо Найман ит экен\" деген ылакапты боз чологу менен Найманды _____ адамдар чыгарган. Ал эми башка жердеги эл бул ылакаптын эмнеликтен чыкканын _____. Ошондуктан ылакап баштагы таржымалы _____, элге _____ соң жалпыланып колдонулат.","o":["тааныган / биле албайт / менен бирге айтылып / тараган","тааныган / билет / билинбесе да /айтылган","тааныбаган / биле албайт / билинбесе да / тараган","тааныбаган / билет / менен бирге айтылып / айтылган"],"k":0}],[{"s":"Кыргызстанда жарандар _____ менен камсыздалбагандыктан, алар чет өлкөлөргө кетип иштөөгө _____ болушат.","o":["ыңгайлуу жерлер/ макул","жакшы жумуш/ аргасыз","жетишсиз иш/ мажбур","завод-фабрикалар/ аргасыз"],"k":1},{"s":"Мугалимдин окуучуга карата кылган _____мамилеси окуучунун сабагына болгон _____ .","o":["жаман/ сүйүүсүн эч жоготпойт","адилеттүү/ адилетсиздигин жоготот","ийкемдүү/ кызыгуусун арттырат","кайдыгер/ тырышчаактыгын көбөйтөт"],"k":2},{"s":"_____кызматкерлердин ордуна караганда командага эң таланттуу, ишенимдүү жана жалпы максатка кайдыгер карабаган _____ кишилерден турган команда топтогонуңуз оң.","o":["көп сандагы/ аз гана",".пайдасыз/ жалкоо","аз сандагы/ көп сандагы","балит/ акылдуу"],"k":0},{"s":"Таарынычты _____, _____ туура эмес. _____таарыныч зыяндан башка эч нерсе алып келбейт.","o":["ичке катпоо/ кек сактоо/ Бетке айтылган","унутпоо/ өч алуу/ Унутулбаган","көңүлгө албоо/ көз жуумп коё берүү/ Бат жоюлган","ичке катуу/ көпкө сактоо/ Ичке катылган"],"k":3},{"s":"Ата-бабаларыбыздын бизге _____таштап кеткен асыл тилибизди бизден кийинки урпактарга _____- биздин _____.","o":["сактоого/ сактап калуу/ максатыбыз","мурас катары/ жеткирип берүү/ милдетибиз","салт боюнча/ калтырып кетүү/ парзыбыз","байыртадан/ жеткирүү/ салтыбыз"],"k":1},{"s":"Агып жаткан булактын суусун ичүү _____. _____ ал сууда ден-соолукка _____ бар болуп калышы ыктымал.","o":["пайдалуу/ Анткени/ зыянсыз витаминдер","коркунучтуу/ Себеби/ зыяндуу мителер","зыяндуу/ Балким/ пайдасыз заттар","болбойт/ Демек/ коркунучтуу курттар"],"k":1},{"s":"Мобилдик байланыш антенналары биздин үйлөрүбүздү _____ нурлары менен каптап турат. Алар адамдардын жандуу клеткаларына _____ тийгизет, акырында адам _____.","o":["көрүнгүс/ масштабдуу таасирин/ бу дүйнө менен коштошот","зыяндуу/ терс таасирин/ оор илдеттерге чалдыгат","электромагниттик/ психологиялык таасирин/ нерв ооруларына кабылат","пайдалуу/ пайда/ дени чың болуп калат"],"k":1},{"s":"Антибиотиктер оору алып келчү бактерияларды жок кылууга көмөктөшөт. Бирок аларды көп колдонсок, алар бактерияларды өлтүрүү сыпатын _____ да, ден-соолукка _____ болуп калат.","o":["өркүндөтүшөт/ өтө пайдалуу","жоготот/пайдасыз","жакшыртышат/ зыянсыз","калтырат/ зыян"],"k":1},{"s":"Кээ бир жумуштарды _____ аткаруу керектигин жана аны башка _____ мүмкүн эместигин билсек деле, баары бир _____. Жыйынтыгында ал үчүн өзүбүздү жемелейбиз.","o":["тез/ бирөөгө жасатуу/ жалкоолукка алдырып коёбуз","убактысында/ күнгө калтыруу/ тобокелге салабыз","өзүбүз/ бир адам жасашы / кичүүлөргө жасатабыз","өз учурунда/ убакка жылдыруу/ эртеңки күнгө калтырабыз"],"k":3},{"s":"Адам укугун жана эркиндигин улутуна, расасына, динине _____ сактоо, коргоо _____ маселе болуп саналат. _____ ар бир коомдо дискриминация бекем орун алган","o":["ылайык/ орчундуу/ Бирок","карабай/ актуалдуу/ Ага карабастан","таянып/ масштабдуу/ Себеби","бөлбөй/ пайдасыз/ Ошондуктан"],"k":1}],[{"s":"Психикалык оорулар мээ ишинин бузулуусунан _____. Бирок бардык эле бузулуу психикалык ооруларды _____. Мисалы айрым _____ ооруларында мээ жабыркаганы менен психиканын бузулуусу _____.","o":["келип чыгат/ пайда кылбайт/ нерв/ байкалбайт","пайда болот/ жарата бербейт/ руханий/ боло бербейт","өркүндөйт/ күчөтпөйт/ психиканын/ өзгөрбөйт","пайда боло бербейт/ пайда кылат/ мээ/ дайыма байкалат"],"k":0},{"s":"Ар бир нерсенин өз нормасынан _____ колдонулушу кандайдыр бир _____ көрсөтөт. Ден-соолукка пайдалуу деген спорт менен да _____ машыгуу көптөгөн ооруларды _____ .","o":["көбүрөөк/ терс таасирин/ көп/ айыктырбайт","азыраак/ пайдасын/ аз/ жаратпайт","сырткары/ жакшы жерин/ дайыма/ жок кылат","ашыгыраак/ зыянын/ ашыкча / пайда кылат"],"k":3},{"s":"Төрт түлүк малдын кээ бир породаларынын туягы, териси өтө _____ болот. Ал породалардагы мал атайын _____ сарайларда багылганга _____.","o":["калың/ желдетилген/ көнүп калган","оор/ курулган/ үйрөтүлгөн","жука/ жылууланган/ ылайыкталган","жумшак/ оор шарттагы/ мажбур болушат"],"k":2},{"s":"Акыркы учурда балдарга карата жасалган зордук-зомбулук _____ жатат. Буга эң негизги себептердин бири - үй-бүлөлүк баалуулуктардын _____ .","o":["азайып/ туруктуу болгондугу","чыңалып/ бош абалы","көбөйүп/ жоголуп баратканы","жоголуп/ көңүлгө алынуусу"],"k":2},{"s":"Жеке бюджетти _____ пландап, аны _____ пайдаланууну билген адамдар кайсы чөйрөдө иштебесин, анын майын чыгара иштей алары _____","o":["жакшы/ жакшы/ белгилүү","туура эмес/ туура эмес/ мүмкүн эмес","туура/ туура/ шексиз","чала/ чала/ мүмкүн"],"k":2},{"s":"\"Манас\" эпосу - кыргыз элинин басып өткөн тарыхый жолун чагылдырган _____ чыгармасы. Бул эпос - кыргыз элинин дүйнөлүк _____ казынасына кошкон эң зор _____.","o":["тарыхый/ адабият/ эмгеги","эпикалык/ маданият/ салымы","баатырдык/ баалуулуктар/жардамы","оозеки/ искусство/ чыгармасы"],"k":0},{"s":"Боз үй - жалаң мал чарбачылыгын аркалаган эл _____ жерде : мейли _____ , мейли _____ болсун, жашоого бирдей оңтойлуу шарт түзгөн үй.","o":["үчүн ыңгайлуу/ суукта/ ысыкта","туура көргөн/ жайлоодо/ кыштоодо","эркин жүргөн/ тоолуу/ токойлуу","каалаган/ тоодо/ түздө"],"k":0},{"s":"Кургак учукту козгогучтардын бир нече түрү (кишиники, бодо малдыкы жана канаттуулардыкы ж. б.) белгилүү. Адамдар _____ кишинин кургак учугу менен оорушат, бирок _____ кургак учугу менен да жабыркашы _____.","o":["дайыма/ эч качан/ башка жаныбарлардын/ мүмкүн эмес","көбүнчө/ көп учурда/ канаттуулардын/ байкала бербейт","көбүнесе/ дайыма/ айбандардын/ боло бербейт","негизинен/ кээде/ бодо малдын/ мүмкүн"],"k":3},{"s":"Окуучунун жекече кызыгуусуна, шыгына, ден соолугуна жана коомдогу социалдык экономикалык өзгөрүүлөрдүн талаптарына _____ аны аң-сезимдүү кесип тандап алууга даярдоого _____ комплекстүү иш-чаралар көп - көптөн _____ .","o":["ылайык/ багытталган/ көрсөтүлүп турушу керек","баш ийген/ көрсөтүлгөн иш чаралар/ түзүлүүдө.","жараша/ сарпталган/ ишке аша баштады","карабай/ жумшалган/ жүргүзүлүшү зарыл"],"k":0},{"s":"Адам коому жана адамдардын ортосундагы өз ара мамилелерди изилдөөдө социологдор интуицияга, ишенимдерге же уккандарга _____ , алар адам коомунун тиричилигин _____ жолу менен алынган илимий маалыматтарга _____ .","o":["көңүл бурбастан/ изилдөө/ гана таянышат","гана эмес/ окуп үйрөнүү/ көңүл бурушат","эч таянбастан/ чагылдыруу/ басым жасашат","көңүл бурушат/ көрсөтүү/ таянышат"],"k":0}],[{"s":"Мектептердин _____ сабатсыз муундун _____ жол берет. Бул, өз учурунда, кылмышкерлердин көбөйүүсүнө _____ . Эгерде мындай болуп кетсе, абактардын санынын _____ таң калаарлык болбой калат.","o":["көбөйүүсү/ азаюусуна/ таасир этет/ азаюусу","жабылышы/ өсүшүнө/ түрткү болот/ өнүгүүсү","аздыгы/ көбөйүүсүнө/ алып келет/ жогорулашы","жыштыгы/ жоюлуусуна/ жол бербейт/ төмөндөшү"],"k":2},{"s":"Интернеттин жардамы менен ар кандай форматтагы билдирүүлөрдү, маалыматты сактоону жана алмашууну ишке ашыра алабыз . _____ интернет - түрдүү кызыкчылыктар менен бириккен адамдардын _____ байланыш айдыңы.","o":["Ошондой эле/ виртуалдуу","Анткени/ дүйнөлүк желе","Анын үстүнө/ коммуникациялык","Негизи/ алыстан"],"k":0},{"s":"Өсүмдүк менен азыктанган жаныбарларды _____, жырткыч жаныбарлардын популяциясы кескин _____. Жырткычтардын _____ табигый балансты бузат. Ошондуктан адам баласы табигатка _____ керек.","o":["көбөйтсөк/ азаят/ жоктугу/ туура мамиле кылышы","тукум курут кылсак/ жогорулайт/ көптүгү/ кол салбашы","көп жайылтсак/ көбөйөт/ көбөйүүсү/ аяр мамиле жасашы","кырып салсак/ төмөндөйт/ аздыгы/ кийлигишпеши"],"k":3},{"s":"Ыр түрүндө жазылган «Манасты» башка эпостордон айырмалап турган өзгөчөлүк --- ырды үн созуп _____ зор күч, ички сезим, мимиканы кеңири _____ аткарууга _____ .","o":["айтканга караганда/ пайдаланып/ ылайыкташкандыгы","айткандын ордуна/ көрсөтүп/ болгон мүмкүнчүлүгү","айтканга окшоштуруп/ колдонуп/ болгон эркиндиги","айтканы менен/ чыгарып/ жеңил болгондугу"],"k":0},{"s":"_____ ар бир ата-эне өз баласын нукура кыргыз тилинде сүйлөөгө _____, кыргыз тилинин келечеги зор болмок. _____ , биздин заманда руханий баалулуктарыбыз _____ .","o":["Дүйнөдө/ машыктырса/ Бирок/ каралбай жатат","Эгерде/ умтулса/ Ошондуктан/ баркталышы керек","Балким/ үйрөтсө/ Тилекке каршы/ бааланбай келет","Өлкөбүздө/ көндүрсө/ Андыктан/ эске алынмакчы"],"k":0},{"s":"_____ «Христостун туулган күнү» деп аталган учурдан башталат. Мындай жыл саноо бүгүнкү күндө дүйнөдөгү мамлекеттердин _____ кабыл _____ ,мусулман өлкөлөрүндөгү жыл саноо Мухаммед пайгамбардын (САВ) Меккеден Мединага көчкөн 622-жылдан _____ .","o":["Жаңы заман/ баарында/ алынган болсо/ гана башталат","Биздин эра/ көпчүлүгүндө/ алынса да/ тарта эсептелет","Христиандардын доору/ көбүндө/ алынганы менен/ баштап саналат","Азыркы убак/ бардыгы/ алган болсо да/ калып калган"],"k":1},{"s":"Оптимист адамдар пессимисттерге караганда ийгиликке _____ жетишишет. Себеби алар өз күчтөрүнө _____ , башка адамдардын ойлору менен _____ .","o":["дайыма/ таянышат/ алек болушат","азыраак/ ишенишпейт/ макул болушпайт","чанда/ таяна алышпайт/ жашашат","көбүрөөк/ ишенишет/ чектелип калышпайт"],"k":3},{"s":"_____ биология --- _____ орто жана жогорку окуу жайларында окутулуучу стандарттык _____ болуп саналат.","o":["Негизи/ өнүккөн өлкөлөрдө/ илим","Дүйнөдө/ бардык/ программа","Учурда/ дүйнө жүзүндө/ предмет","Мектепте/ көпчүлүк/ сабак"],"k":2},{"s":"Ар бир нерсенин өз нормасынан _____ колдонулушу кандайдыр бир _____ көрсөтөт. Ден-соолукка пайдалуу деген спорт менен да _____ машыгуу көптөгөн ооруларды _____ .","o":["көбүрөөк/ терс таасирин/ көп/ айыктырбайт","азыраак/ пайдасын/ аз/ жаратпайт","сырткары/ жакшы жерин/ дайыма/ жок кылат","ашыгыраак/ зыянын/ ашыкча/ пайда кылат"],"k":3},{"s":"Кыргыздар _____ ылайык боз үйдүн _____ түрүн кабыл алышкан.","o":["тоо-ташка/ жыйылма","көчкөнгө/ кичинекей","суукка/ жылуу","жашоо шартына/ жүктөмө"],"k":3}],[{"s":"Адамдын экологияга тийгизген _____ өтө кооптуу : адамдын айынан _____ токойлор _____, жаныбарлардын миңдеген түрлөрү _____.","o":["жамандыгы/ толтура/ жок болду/ кырылды","залакасы/ бардык/ кырылды/ тим болду","кызматы/ миллиондогон/ өрттөлдү/ өлдү","таасири/ көптөгөн/ кыйылды/ жоголду"],"k":3},{"s":"_____ кошулуусу _____.","o":["анархисттердин/ демократттарга/ адаттагы көрүнүш","имамдардын / атеисттерге/ ажеп эмес","эркектердин/ феминисттерге/ таң калыштуу көрүнүш","уурулардын / кылмышкерлерге/ адаттан тышкаркы көрүнүш"],"k":2},{"s":"_____ мезгил талаптарына жана убакытка, аймакка жана барчу жерге, окуялардын жана көрүнүштөрдүн мазмунуна жооп бериши керек.","o":["Тамак-аш","Кийим","Акча","Дары-дармек"],"k":1},{"s":"Жер бетинин 71 % океан _____ ээлейт. Калган бөлүктөрү кургак _____ жана _____ турат.","o":["жерлери/ жерлерден/ Антарктидадан","мейкиндиги/ материктерден/ континенттерден","суулары/ континеттерден/ аралдардан","алкагы/ топурактан/ жерлерден"],"k":2},{"s":"Табигый кырсыктар --- капысынан болуп, адам баласынын _____ табияттын алаамат кубулуштары. _____ табият кырсыктары адамдын иш-аракетинен да болушу мүмкүн.","o":["оюна/ эч келбеген/ Демек/ көпчүлүк","аракетине/ баш ийбеген/ Бирок/ айрым","тагдырына/ кол салган/ Ошондой эле/ кээ бир","өмүрүнө/ коркунуч алып келген/ Андай болсо да/ бир да"],"k":1},{"s":"Акыра - кургактыктагы эң _____ жаныбар. _____ , анын узун мойнундагы омурткаларынын саны өзүнөн бир канча эсе _____ келген адамдыкы менен _____ .","o":["узун/ Ошндуктан/ кыскараак/ тең","чоң/ Анткени менен/ кичине/ окшош","бийик/ Андай болсо да/ кыска/ барабар","алп/ Ошентсе да/ алсыз/ бирдей"],"k":2},{"s":"Биздин оюбуз боюнча, аюулар адамды тамак катары санашат. Бирок бул болгону _____ . Аюу, адам анын _____ киргенде гана, өз _____ коргоо же аны _____ максатында гана кол салат.","o":["стереотип/ территориясына/ тукумун/ жеринен айдоо","жаңылыштык/ үңкүрүнө/ балдарын/ коркутуу","калп/ аймагына/ мамалагын/ качыруу","жомок/ айланасына/ үңкүрүн/ өлтүрүү"],"k":0},{"s":"Биздин комуз _____ арасында эң байыркы _____ бири.","o":["кыргыз калкынын/ салттуу аспаптардын","Орто Азия элдеринин/ руханий мурастын","түрк элдеринин/ музыкалык аспаптардын","жергиликтүү калктын/ маданий мурастын"],"k":2},{"s":"Ысык-Көл суусунун алдында байыркы урандылар бар экендиги көпчүлүккө кеңири _____ болгону менен, ал шаар жакшы _____ .","o":["белгилүү/ изилденилген","таанылбаган/ сакталган","белгисиз/ сакталган","маалым/ изилденилбеген"],"k":3},{"s":"Абанын температурасынын _____ , кар катмарынын _____, өсүмдүктөр менен жаныбарлар дүйнөсүнүн тиричилигиндеги өзгөрүшү , негизинен, _____ айында _____.","o":["төмөндөшү/ калыңдоосу/ күз/ башталат","ысышы/ жоголуусу/ жай/ токтолот","муздашы/ топтолуусу/ кыш/ сакталат","көтөрүлүшү/ эриши/ жаз/ байкалат"],"k":3}],[{"s":"Курманжан кадимки ак паашанын Ташкенге койгон санжыргалуу төрөлөрүнүн кабыл алуусуна _____ башында ак илеки, жакасынан бүт _____ тегерете кундуз _____ кызыл кымкап _____ кийип келди.","o":["келген шекилдүү, алдын, тигилген, ичик","даярданып алгандай, этегин, тигилген, чепкен","келген сыяктуу, өңүрүн, кармалган, тон","баштап келгендей, толук, сыйдырылган, кемсел"],"k":1,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Сылыктык үчүн төрөгө _____ырыкмат билдирип, ошончо көпчүлүккө _____бир тиктебей, жарыла салам айткан элге үнсүз, _____, баягы жупуну, саал эңкейе баскан _____ жай өттү.","o":["ооз учунан, өйдө карап, баш ийкебей, сөөлөтүндө","калп эле, тике карап, баш ийкеп, мүнөзүндө","жөн эле, ылдый карап, баш ийкемексен гана, таризде","ооз кыбырата, жер карап, баш ийкегендей болуп, шекилде"],"k":3,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Дардын утуру бет маңдайынан, эшик төрдөй жерге катар _____коюлган экен, дайыма төргө өтүп келген_____, же төрөгө атайын _____көрсөткөнүбү, ортодогу чоң орунга келип_____.","o":["тепкич, адатынанбы, сыр, жайланышты","секи, көнүмүшүнөнбү, дымак, отурду","текче, мүнөзүнөнбү, айбат, коомай отурду","таш, адатынанбы, сыр, орун алды"],"k":1,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Араба _____дүңгүрөп, ташка тийген такалардан _____чагылат.","o":["качыр-кучур, учкун","карс-курс, топон","карса-курс, жалын","тарсылдап, кыпын"],"k":0,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Капчыгайга сырттан келе берген сыдырым талаанын алда кайсы жеринен бүрдөгөн эрмендин кермек ачуу чаңын учуруп, _____шамалдап жаткан самандын _____коңур жытын лепилдетип, жол катары шыраалжын_____, ушунун баары жерге жибиген анын жытына_____, адамды эңги-деңги мас кылгансыйт.","o":["аңызда, билинер-билинбес, буруксуп, аралашып","Ажерде, жагымдуу, буркурап, кошулуп","айдоодо, аз гана, жыттанып, биригип","талаада, жагымсыз, сасып, биригип"],"k":0,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Бул окуяга ишенүү(гө) _____, _____ алиге чейин эч бир жан _____ келген жок.","o":["болот, анткени менен, издеп","болбойт, себеби, артынан","кыйын, анткени, сурамжылап да","мүмкүн эмес, ошондуктан, көргөнү"],"k":2,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Окумуштуулар _____ эки жүз жыл _____ атмосферада дем алууга _____ жана көмөктөшпөөчү _____ бар экендигин аныкташкан.","o":["мурда, илгери, пайдалуу, суу","мындан, кийин, ылайык, зат","илгери, мурун, жарактуу, суюктук","мындан, мурда, жараксыз, газ"],"k":3,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"_____ чарба менен жарышуу оңой иш эмес, _____ аны жеңип чыгалы.","o":["чындыгында, ошондуктан","албетте, ошентсе да","туура, андыктан","сыягы, ошол себептүү"],"k":1,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Ээ балам, «_____» деген ушул.","o":["Аягы асманга чыгуу, абийири айрандай төгүлүү","Жөргөмүштүн торуна түшүү, тумшугу ташка тийүү","Даңкы таш жару, жаза басу","Келиниң жакшы болсо-кыз тапканың, келиниң жаман болсо-уулуңду жоготконуң"],"k":3,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"_____, комбайнын_____, Касым эгин чаап кирсе _____.","o":["Бали, жүргүзүп, канна","Ботом, күрүлдөтүп, го.","Аттиңай, айдап, гана","Охо, от алдырып, бейм."],"k":1,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."}],[{"s":"Аблайдын аскерлери менен болгон салгылашууларда солто уруусунун ичиндеги бөлөкбай, талкан уруктарынын түпкү атасы Чаанын _____ Бишкек баатырларча кармашкан.","o":["уулу","урпагы","туягы","мурасчысы"],"k":1,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Эртели кеч каксоолордо _____ бозоруп, куурайлар кыроо чалган бүрлөрүн жерге эми төгүп, _____ бирде жаап, бирде эрип жатты.","o":["чөптүн башы, сары кар.","коен томук, акыркы кар","жылан чөп, катын ыйлаак","шыбак башы, кемпир ыйлаак."],"k":3,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Мидиндин элүүнчү жылдары _____ иштеп калышы да белгилүү даражада анын сатиралык чыгармаларынын _____ шарт түзгөн.","o":["«Шибеге» гезитинин редакциясында, элге таралышына.","«Чабуул» журналынын редакциясында, элге жагышына.","«Чалкан» журналынын редакциясында,бийик көтөрүлүүсүнө..","«Ийнелик» гезитинин редакциясында, аброюнун көтөрүлүшүнө."],"k":2,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Какшаал тоого чейин барып, анын кыры менен кайра Фергана тоо кыркасына келген _____ ичиндеги аймак географиялык адабиятта Ички Тянь-Шань деп аталат.","o":["туюк контурдун","коктунун","өрөөндүн","рельефтин"],"k":0,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Рельеф түзүүчү факторлорго _____, _____ кирет.","o":["кыяндар, суу каптоолор","кар көчкүлөр, селдер","селдер, агын суулар","карлар менен жамгырлар"],"k":1,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"_____ куру чыкпайт.","o":["Ыймандуу үйдөн","Адептүү жайдан","Куттуу үйдөн","Таза жерден"],"k":2,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Жакшы сөз укса,_____ ыраазы, жакшы нерсе көрсө _____ ыраазы, жакшы иш жасаса, _____ ыраазы, жетерине жетсе _____ ыраазы, мунун баарына- _____ өзү ыраазы.","o":["кулак, көз, кол, бут, адам","адам, көрүүчү, ишкер, жолоочу","ал, бул, тиги, ошол","ата, апа, ага, карындаш"],"k":0,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Алыстагы душмандан _____ ойлуу _____ жаман.","o":["начар, коңшу","жаман, дос","кара, тууган","арам, жеңе"],"k":2,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"«Сонун экен бул да,- деп, сорпосун ичсем мына, - деп, _____ сорпосун калтырбай ичип салганы»","o":["бир аяктай","эки аяктай","үч аяктай","жарты аяктай"],"k":1,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."},{"s":"Шаардын _____көбү «киргиздер», же кыргыз эместер болгону, алардын кийинки _____жетекчи кызматтарга көп иштешкени, бузулуп жазылган же туура эмес айтылган _____көбөйүшүнө апкелди.","o":["калкынын, убактарда, кептердин","элинин, мезгилдерде, сөздөрдүн","жашоочуларынын, кездерде, кайчы пикирлердин","тургундарынын, учурда, жаман ойдун"],"k":1,"w":"Булак файлда жооп ачкычы жок болчу, жоопту мен өзүм тандадым. Мугалим менен текшерип алыңыз."}],[{"s":"Экономикасы _____ өлкөлөрдө билим берүү системасы _____ болбогондуктан, ал өлкөлөрдө жумушсуздук _____ көрүнүш.","o":["жакшы өнүккөн/ жакшы эмес/мыйзам ченемдүү.","өнүгүп келе жаткан/күчтүү/туура эмес","такыр өнүкпөгөн/ бошоң/жийиркенерлик","начар өнүккөн/анчейин жакшы/кадимкидей эле"],"k":3},{"s":"Абанын _____ мөңгүлөрдүн ээрип кетүүсүнө _____. Ошондуктан, абаны _____ чаралары көрсөтүлүш керек.","o":["тазалануусу/түрткү болбойт/тазалоо","кирденүүсү/себеп болот/тазалоо","уулануусу/шарт түзөт/дизинфекциялоо","нымдуулугу/байланыштуу/туура пайдалануу"],"k":1},{"s":"Бир өлкөдө китепке болгон суроо-талап _____ болсо, ал өлкөнүн элин сабаттуу деп _____.","o":["көп/айтсак жанылышабыз","жок/эсептөө күмөндүү","аз/санасак болот","бар/санайбыз"],"k":1},{"s":"Дүйнө жүзүнүн 3/4 бөлүгүн суу элейт. Ошондой болсо да, акыркы учурда суу _____ мамлекеттердин саны _____.","o":["артыкчылык кылган/азаюуда","көбөйгөн/жетишсиз","жетпеген/көбөйүүдө","жете турчу/жогорулоодо"],"k":2},{"s":"Адам, тамекини _____чексе, никотинге _____ - тамеки чекпей калса _____ .","o":["аз убакытка/көпбөйт/кыйналышы мүмкүн","кээде гана/көнүшү мүмкүн/жүдөйт","узак убакытка/көнүп алат/кыйналат","күндө/муктаж болот/аябай жүдөйт"],"k":2},{"s":"Фашисттик өлкөлөрдө _____ режим негизги болгондуктан, ал өлкөлөр демократияга ар дайым _____ келишкен.","o":["монархиялык/терс көз-караш","коммунисттик/үндөп","гитлердик/колдоо көрсөтүп","диктаторлук/каршы болуп"],"k":3},{"s":"Кыргыздарда кыз узатуу, уулун үйлөндүрүү ата-эненин _____болуп _____. Бул салтыбыз азыркы заманга чейин _____.","o":["парзы/эсептелинген/сакталып келүүдө","милдети/эсептелген эмес/жетип келди колдонулуп","укугу/саналган/колдонулуп келүүдө","чечими/саналчу/сакталган жок"],"k":0},{"s":"Айрым адамдар _____ себептерден улам алкоголдук ичимдиктерди колдонот: айланасындагылар менен болгон чыр-чатактар, түшүнбөөчүлүк, жалгыздык ж.б.у.с. Мындай абал алкоголь таасири менен бираз _____, бирок, _____.","o":["турмуштук/басаңдайт/көп өзгөрбөйт","ар кандай/бузулат/оңолбойт","туура эмес/оорлойт/дайыма эмес","психологиялык/жеңилдейт/пайда чыкпайт."],"k":0},{"s":"Казылып алынуучу отундун ашкере _____ колдонулушу айлана-чөйрөнү _____ зор таасирин тийгизет, абанын булганышы жана кислоталык жарандардын жаашы _____.","o":["ашыкча/кирдетүүдө/күтүлбөйт","көп/булгоодо/коркунучтарды туудурууда","аз/бузууда/күтүлүүдө","жетишсиз/тазалоодо/алдына алууда"],"k":1},{"s":"Улут өз эне тилинин кадыр баркына _____ , башка жат тилдердин алдында _____ болсо, улут катары _____ айдан ачык.","o":["жетпей/тизе бүгө турган/жоюлуп кетери","татыбай/баш ийе турган/жашабагандыгы","жетип/моюн сунбай турган/жаралышы","татып/туруктуу боло турган/жөнгө салынбоосу"],"k":0}],[{"s":"Экспорттун _____ өлкөнүн экономикасына терс таасирин тийгизет. _____ , импорттун санын _____ , товарды эспорттоого _____ .","o":["көптүгү/бирок/кыскартып/да болбойт","жоктугу/демек/азайтпай/көңүл буруш керек","аздыгы/ошондуктан/азайтып/басым жасаш керек","жетишсиздиги/ошол себептүү /көбөйтүп/жалтоо болбош керек"],"k":2},{"s":"Кээ бир өлкөлөрдө жергиликтүү жумушчу күчү _____. _____ ,ал өлкөлөр мигрант жумушчуларга _____.","o":["ашыкча/андыктан/пайдасыз","жетишсиз/ошол себептүү/муктаж","арбын/демек/бай","аз/себеби/көз каранды"],"k":1},{"s":"Дүйнөдө таланттуу, билимдүү адамдар көп экени _____. _____, ал адамдар өз талантын бир багытка _____, алган билимин турмушта _____, алардын эч кимге пайдасы тийбейт.","o":["талашсыз/Бирок/жумшабаса/колдонбосо","күмөндүү/Себеби/бурбайт/колдонбойт","калп/Анткени/жумшай бербейт/колдоно бербейт","чындык/Ошондуктан/бурса/колдонсо"],"k":0},{"s":"Монополисттин чарба жүргүзүүдөгү башкы стратегиялык максаты -сатуудан _____, ошондой эле, _____ алууу.","o":["сапаттуу товар/минималдуу зыян","максималдуу киреше/максималдуу пайда","көп суроо-талап/үзүлбөгөн кардар","көп товар/ максималдуу зыян"],"k":1},{"s":"_____ адам башкалардын, көңүл буруусуна, түшүнүүсүнө _____.Себеби эч бир адам байкалбай, көмүскөдө калууну _____.","o":["бир да/маани бербейт/эңсебейт","кээбир/зарыл/туура көрбөйт","ар бир/муктаж/каалабайт","бардык/муктаж эмес/ойлобойт"],"k":2},{"s":"балдардын бала бакчага барышы алардын интеллектин _____ .Ошондуктан, билим берүү тармагын оңдойбуз десек, приоритет катары, мектепке чейинки билим алууну _____.","o":["көбүрөөк арттырат/өнүктүрүү керек","эртерээк өстүрөт/тандаш керек","кыйла азайтат/токтотуш керек","бираз жакшыртат/ойлонуш керек"],"k":0},{"s":"Биздин заманда көптөгөн улуттук баалуулуктар _____ ,аларды элге жайылтуу, изилдөө иштери _____ жүрүп, тескеринче сырттан кирген маданияттар, _____ , басымдуулук кылып келет","o":["көмүскөдө калып/азыраак/тилекке каршы","баркталып/көбүрөөк/эмнегедир","баркын жоготуп/ийгиликсиз/бактыбызга жараша","чоң мааниге ээ болуп/бат-бат/элди сүйүнтүп"],"k":0},{"s":"Кар жааганда аба _____ турат. _____ , кар көп жааган жерде, кар аз жааган жерлерге караганда, аба _____.","o":["нымдашып/ Себеби/суугураак","тазаланып/ Демек/ тазараак","салкындап/ Ошондуктан/ нымдуураак","кирден арылып/ Бирок/ кирсиз"],"k":1},{"s":"Өлкөбүздүн экономикасын өнүктүрүү саясатчыларыбыздын гана _____: аны өнүктүрүү биздин да _____.","o":["колунан келбейт/ максатыбыз","иши эмес/ милдетибиз","парзы эмес/ тилегибиз","милдети/ колубуздан келе бербейт."],"k":1},{"s":"Шекер организмибизге _____ азыктардын бири. Бирок, анын _____ колдонулушу ден-соолукка _____.","o":["зыян келтирчү/ аз/ пайда алып келет","пайдасы жок/ көп/ жардамын тийгизет","пайда алып келчү/ жетишсиз/ терс таасир тийгизет","эң керектүү/ ашыкча/ зыян келтирет"],"k":0}]];
+const SETS = {
+  an: { data: TESTS, key: 'analogy-best', title: 'Аналогиялар' },
+  gr: { data: GR, key: 'gram-best', title: 'Грамматика', min: 35 },
+  sc: { data: SC, key: 'sc-best', title: 'Сүйлөм толуктоо', min: 10 }
+};
+SETS.an.min = 20;
+function SD() { return SETS[cur.s].data; }
+const RC = [];
+const ONLY = 'sc';
+const LET = ['А', 'Б', 'В', 'Г', 'Д'];
+const RC_MIN = 20;
+const app = document.getElementById('app');
+
+let view = 'home';
+let cur = { s: 'an', t: 0, i: 0, ans: [] };      // analogy state
+let filter = 'wrong';
+let rc = null;                           // reading state
+let rcFilter = 'all';
+
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v === true) e.setAttribute(k, '');
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) {
+    if (k == null || k === false) continue;
+    e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  }
+  return e;
+}
+function gtext(text) {
+  const parts = String(text).split(/⟦|⟧/);
+  return h('span', { class: 'gt' }, parts.map((p, i) => i % 2 ? h('u', null, p) : p));
+}
+function pair(text) {
+  if (cur && cur.s !== 'an') return gtext(text);
+  const i = text.indexOf(' : ');
+  if (i < 0) return h('span', { class: 'pair' }, text);
+  return h('span', { class: 'pair' },
+    h('span', { class: 'pl' }, text.slice(0, i)),
+    h('span', { class: 'pc' }, ':'),
+    h('span', { class: 'pr' }, text.slice(i + 3)));
+}
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function saveBest(key, t, s) { const b = lsGet(key, {}); if (!(b[t] >= s)) { b[t] = s; lsSet(key, b); } }
+function mount(...nodes) { app.replaceChildren(...nodes); }
+function toTop() { window.scrollTo(0, 0); }
+function setView(v) { view = v; document.body.dataset.view = v.startsWith('rc') ? 'rc' : v; }
+function fmt(ms) { const s = Math.ceil(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+function stopTimer() {
+  if (rc && rc.iv) { clearInterval(rc.iv); rc.iv = null; }
+  if (cur && cur.iv) { clearInterval(cur.iv); cur.iv = null; }
+}
+
+function renderGate() {
+  stopTimer(); setView('gate');
+  const inp = h('input', { class: 'code', id: 'code', type: 'text', inputmode: 'numeric', autocomplete: 'off', maxlength: '4', pattern: '[0-9]{4}', 'aria-label': 'Төрт орундуу код', placeholder: '0000' });
+  const err = h('p', { class: 'cerr', role: 'alert' });
+  function submit(e) {
+    if (e) e.preventDefault();
+    if (/^[0-9]{4}$/.test(inp.value.trim())) renderHome();
+    else { err.textContent = 'Төрт орундуу сан киргизиңиз (4 цифра).'; inp.focus(); }
+  }
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') submit(e); });
+  inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^0-9]/g, '').slice(0, 4); err.textContent = ''; });
+  mount(h('div', { class: 'gate card' },
+    h('p', { class: 'kicker' }, 'Тест даярдыгы'),
+    h('h1', null, 'Кирүү коду'),
+    h('p', { class: 'lead' }, 'Сайтка кирүү үчүн төрт орундуу сан киргизиңиз. Каалаган төрт цифра болот.'),
+    inp, err,
+    h('button', { class: 'btn', type: 'button', onclick: submit }, 'Кирүү')));
+  inp.focus();
+}
+/* ---------- Home ---------- */
+function renderHome() {
+  if (ONLY !== 'all') { if (ONLY === 'rc') renderRcList(); else renderSetList(ONLY); return; }
+  stopTimer(); setView('home');
+  const aTotal = TESTS.reduce((n, t) => n + t.length, 0);
+  const rTotal = RC.reduce((n, t) => n + t.questions.length, 0);
+  const gTotal = GR.reduce((n, t) => n + t.length, 0);
+  const cTotal = SC.reduce((n, t) => n + t.length, 0);
+  mount(
+    h('header', { class: 'hero' },
+      h('p', { class: 'kicker' }, 'Тест даярдыгы'),
+      h('h1', null, 'Аналогия, окуп түшүнүү, грамматика жана сүйлөм толуктоо'),
+      h('p', null, 'Бөлүмдү тандаңыз. Аналогия, грамматика жана сүйлөм толуктоодо жооп дароо көрүнөт. Убакыт: аналогия 20, грамматика 35, сүйлөм толуктоо 10, окуп түшүнүү ар бир текстке 20 мүнөт.')
+    ),
+    h('div', { class: 'secs' },
+      h('button', { class: 'sec', type: 'button', onclick: () => renderSetList('an') },
+        h('h2', null, 'Аналогиялар'),
+        h('p', { class: 'stats' }, h('span', null, TESTS.length + ' тест'), h('span', null, aTotal + ' суроо'), h('span', null, '20 мүнөт / тест')),
+        h('p', { class: 'desc' }, 'Суроолор аралаштырылган. Ар бир жоопко туура жооп жана логикалык түшүндүрмө чыгат.'),
+        h('span', { class: 'btn' }, 'Тесттерди ачуу')),
+      h('button', { class: 'sec', type: 'button', onclick: renderRcList },
+        h('h2', null, 'Окуп түшүнүү'),
+        h('p', { class: 'stats' }, h('span', null, RC.length + ' текст'), h('span', null, rTotal + ' суроо'), h('span', null, RC_MIN + ' мүнөт / текст')),
+        h('p', { class: 'desc' }, 'Тексттер сап номерлери менен берилген, суроолор файлдагы тартип боюнча. Аягында туура жана ката жооптордун талдоосу.'),
+        h('span', { class: 'btn' }, 'Тексттерди ачуу')),
+      h('button', { class: 'sec', type: 'button', onclick: () => renderSetList('gr') },
+        h('h2', null, 'Грамматика'),
+        h('p', { class: 'stats' }, h('span', null, GR.length + ' тест'), h('span', null, gTotal + ' суроо'), h('span', null, '35 мүнөт / тест')),
+        h('p', { class: 'desc' }, 'Ар бир тест 30 суроодон турат. Жооп дароо көрүнөт.'),
+        h('span', { class: 'btn' }, 'Тесттерди ачуу')),
+      h('button', { class: 'sec', type: 'button', onclick: () => renderSetList('sc') },
+        h('h2', null, 'Сүйлөм толуктоо'),
+        h('p', { class: 'stats' }, h('span', null, SC.length + ' тест'), h('span', null, cTotal + ' суроо'), h('span', null, '10 мүнөт / тест')),
+        h('p', { class: 'desc' }, 'Ар бир тест 10 суроодон турат. Бош орундарга туура сөздөрдү танда.'),
+        h('span', { class: 'btn' }, 'Тесттерди ачуу'))
+    )
+  );
+  toTop();
+}
+
+/* ---------- Analogies ---------- */
+function renderSetList(k) {
+  stopTimer(); setView('analogy-list');
+  const S = SETS[k], D = S.data;
+  const best = lsGet(S.key, {});
+  const total = D.reduce((n, t) => n + t.length, 0);
+  mount(
+    ONLY === 'all' ? h('div', { class: 'bar' }, h('button', { class: 'link', type: 'button', onclick: renderHome }, 'Башкы бет')) : null,
+    h('header', { class: 'list-head' },
+      h('h1', null, S.title),
+      h('p', null, S.min + ' мүнөт. ' + (k === 'an' ? total + ' суроо тестке бөлүнгөн. 1–5 тест биринчи 100 суроо, 6–' + D.length + ' тест кийинки суроолор.' : total + ' суроо ' + D.length + ' тестке бөлүнгөн.'))),
+    h('div', { class: 'tiles' }, D.map((T, t) =>
+      h('div', { class: 'tile' },
+        h('div', null, h('p', { class: 'kicker' }, 'Тест'), h('p', { class: 'num' }, String(t + 1))),
+        h('p', { class: 'meta' }, T.length + ' суроо · ' + S.min + ' мүнөт'),
+        h('p', { class: 'best' }, best[t] != null ? 'Мыкты жыйынтык: ' + best[t] + ' / ' + T.length : 'Али тапшырган жоксуз'),
+        h('button', { class: 'btn', type: 'button', onclick: () => startTest(t, k) }, best[t] != null ? 'Кайра тапшыруу' : 'Баштоо')
+      ))),
+    h('p', { class: 'legend' },
+      h('b', null, 'Эскертүү. '),
+      'Жооп ачкычы сиз берген тизмеден алынды. Айрым суроолордо ачкыч логикага туура келбей калышы мүмкүн, андайларда түшүндүрмөнүн астында сары эскертүү чыгат.')
+  );
+  toTop();
+}
+function renderAnalogyList() { renderSetList(cur.s || 'an'); }
+function startTest(t, k) { k = k || cur.s || 'an'; cur = { s: k, t, i: 0, ans: Array(SETS[k].data[t].length).fill(null), start: Date.now(), deadline: Date.now() + SETS[k].min * 60000, finished: false, iv: null }; filter = 'wrong'; renderQuiz(); toTop();
+  cur.iv = setInterval(qtick, 500);
+}
+function qtick() {
+  if (!cur || cur.finished) { stopTimer(); return; }
+  const left = Math.max(0, cur.deadline - Date.now());
+  const el = document.getElementById('qtimer');
+  if (el) { el.textContent = fmt(left); el.className = 'timer sm' + (left < 60000 ? ' bad' : left < 300000 ? ' warn' : ''); }
+  if (left <= 0) { cur.timeout = true; renderResult(); toTop(); }
+}
+function pick(j) { if (cur.ans[cur.i] !== null) return; cur.ans[cur.i] = j; renderQuiz(true); }
+function go(d) {
+  const n = cur.i + d;
+  if (n < 0) return;
+  if (n >= SD()[cur.t].length) { renderResult(); return; }
+  cur.i = n; renderQuiz(); toTop();
+}
+function renderQuiz(justAnswered) {
+  setView('quiz');
+  const T = SD()[cur.t], q = T[cur.i], a = cur.ans[cur.i], done = a !== null, ok = a === q.k;
+  const last = cur.i === T.length - 1;
+  const answeredCount = cur.ans.filter(x => x !== null).length;
+  const dots = h('div', { class: 'dots' }, T.map((x, j) => {
+    const s = cur.ans[j];
+    const cls = 'dot' + (j === cur.i ? ' cur' : '') + (s === null ? '' : (s === x.k ? ' ok' : ' bad'));
+    return h('button', { class: cls, type: 'button', 'aria-label': 'Суроо ' + (j + 1), 'aria-current': j === cur.i ? 'true' : null, onclick: () => { cur.i = j; renderQuiz(); } }, String(j + 1));
+  }));
+  const opts = h('div', { class: 'opts', role: 'group', 'aria-label': 'Жооп варианттары' }, q.o.map((txt, j) => {
+    let cls = 'opt', tag = null;
+    if (done) {
+      cls += ' locked';
+      if (j === q.k) { cls += ' ok'; tag = j === a ? 'Сиздин жооп, туура' : 'Туура жооп'; }
+      else if (j === a) { cls += ' bad'; tag = 'Сиздин жооп, ката'; }
+      else cls += ' dim';
+    }
+    return h('button', { class: cls, type: 'button', 'aria-disabled': done ? 'true' : null, onclick: () => pick(j) },
+      h('span', { class: 'ltr' }, LET[j]), pair(txt), tag ? h('span', { class: 'tag' }, tag) : null);
+  }));
+  let fb = null;
+  if (done) {
+    fb = h('div', { class: 'fb ' + (ok ? 'ok' : 'bad'), role: 'status', tabindex: '-1', id: 'fb' },
+      h('p', { class: 'verdict' }, ok ? 'Туура!' : 'Ката. Туура жооп: ' + LET[q.k] + ') ' + q.o[q.k]),
+      q.e ? h('p', { class: 'why-h' }, 'Эмне үчүн?') : null,
+      q.r ? h('p', { class: 'rel' }, 'Байланыш: ' + q.r) : null,
+      q.e ? h('p', { class: 'why' }, q.e) : null,
+      q.w ? h('p', { class: 'note warn' }, h('b', null, 'Көңүл буруңуз. '), q.w) : null,
+      q.i ? h('p', { class: 'note' }, h('b', null, 'Эскертүү. '), q.i) : null,
+      q.t ? h('p', { class: 'note' }, h('b', null, 'Текст оңдолду. '), q.t) : null);
+  }
+  mount(
+    h('div', { class: 'bar' },
+      h('button', { class: 'link', type: 'button', onclick: renderAnalogyList }, 'Тесттер тизмеси'),
+      h('p', { class: 'count' }, 'Тест ' + (cur.t + 1) + ' · ' + (cur.i + 1) + ' / ' + T.length),
+      cur.finished ? null : h('div', { class: 'timer sm' + (cur.deadline - Date.now() < 60000 ? ' bad' : cur.deadline - Date.now() < 300000 ? ' warn' : ''), id: 'qtimer', role: 'timer', 'aria-label': 'Калган убакыт' }, fmt(Math.max(0, cur.deadline - Date.now())))),
+    dots,
+    h('section', { class: 'card' + (cur.s !== 'an' ? ' gr' : '') },
+      h('p', { class: 'eyebrow' }, 'Суроо ' + (cur.i + 1) + (q.n ? ' · булактагы № ' + q.n : '')),
+      cur.s === 'an' ? h('p', { class: 'lead' }, 'Биринчи жуптун ортосундагы байланышты тап. Ошого окшош жупту танда.') : null,
+      h('div', { class: 'stem' }, pair(q.s)),
+      opts, fb,
+      h('div', { class: 'nav' },
+        h('button', { class: 'btn ghost', type: 'button', disabled: cur.i === 0, onclick: () => go(-1) }, 'Мурунку'),
+        h('button', { class: 'btn', type: 'button', onclick: () => go(1) },
+          last ? (answeredCount === T.length ? 'Жыйынтыкты көрүү' : 'Жыйынтык (' + (T.length - answeredCount) + ' жоопсуз)') : 'Кийинки суроо')))
+  );
+  if (justAnswered) {
+    const el = document.getElementById('fb');
+    if (el) {
+      el.focus({ preventScroll: true });
+      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'nearest' });
+    }
+  }
+}
+function renderResult() {
+  if (!cur.finished) { cur.finished = true; cur.used = Math.min(SETS[cur.s].min * 60000, Date.now() - cur.start); }
+  stopTimer();
+  setView('result');
+  const T = SD()[cur.t];
+  const score = T.reduce((n, q, j) => n + (cur.ans[j] === q.k ? 1 : 0), 0);
+  const skipped = cur.ans.filter(x => x === null).length;
+  const pct = Math.round(score / T.length * 100);
+  saveBest(SETS[cur.s].key, cur.t, score);
+  const msg = pct >= 90 ? 'Эң сонун натыйжа.' : pct >= 70 ? 'Жакшы натыйжа. Каталарды карап чыгыңыз.' : pct >= 50 ? 'Орточо. Каталарды түшүндүрмөсү менен кайра окуп чыгыңыз.' : 'Кайра аракет кылыңыз. Түшүндүрмөлөр жардам берет.';
+  const list = h('div', { class: 'rev' });
+  function fill() {
+    list.replaceChildren(...T.map((q, j) => ({ q, j })).filter(({ q, j }) => filter === 'all' || cur.ans[j] !== q.k).map(({ q, j }) => {
+      const a = cur.ans[j], ok = a === q.k;
+      const chip = a === null ? h('span', { class: 'chip skip' }, 'Жооп берилген жок') : h('span', { class: 'chip ' + (ok ? 'ok' : 'bad') }, ok ? 'Туура' : 'Ката');
+      return h('details', { class: 'item', open: !ok },
+        h('summary', null, h('span', { class: 'qn' }, String(j + 1)), pair(q.s), chip),
+        h('div', { class: 'body' },
+          h('div', { class: 'ans' },
+            a !== null && !ok ? h('p', null, h('b', null, 'Сиздин жооп: '), LET[a] + ') ', pair(q.o[a])) : null,
+            h('p', null, h('b', null, 'Туура жооп: '), LET[q.k] + ') ', pair(q.o[q.k]))),
+          q.r ? h('p', { class: 'rel' }, 'Байланыш: ' + q.r) : null,
+          h('p', { class: 'why' }, q.e),
+          q.w ? h('p', { class: 'note warn' }, h('b', null, 'Көңүл буруңуз. '), q.w) : null,
+          q.i ? h('p', { class: 'note' }, h('b', null, 'Эскертүү. '), q.i) : null,
+          q.t ? h('p', { class: 'note' }, h('b', null, 'Текст оңдолду. '), q.t) : null));
+    }));
+    if (!list.children.length) list.append(h('p', { class: 'note' }, 'Каталар жок. Бардык суроого туура жооп бердиңиз.'));
+  }
+  const tabWrong = h('button', { class: 'tab', type: 'button', onclick: () => set('wrong') }, 'Каталар');
+  const tabAll = h('button', { class: 'tab', type: 'button', onclick: () => set('all') }, 'Бардык суроолор');
+  function set(f) { filter = f; tabWrong.setAttribute('aria-pressed', String(f === 'wrong')); tabAll.setAttribute('aria-pressed', String(f === 'all')); fill(); }
+  set(filter);
+  mount(
+    h('div', { class: 'bar' }, h('button', { class: 'link', type: 'button', onclick: renderAnalogyList }, 'Тесттер тизмеси'), h('p', { class: 'count' }, 'Тест ' + (cur.t + 1))),
+    h('section', { class: 'score' },
+      h('p', { class: 'kicker' }, 'Жыйынтык'),
+      h('p', { class: 'big' }, score + ' / ' + T.length),
+      h('div', { class: 'meter', role: 'img', 'aria-label': pct + ' пайыз' }, h('i', { style: 'width:' + pct + '%' })),
+      h('p', null, pct + '% туура. ' + msg + (skipped ? ' Жооп берилбеген суроолор: ' + skipped + '.' : '')),
+      h('div', { class: 'facts' }, h('span', { class: 'fact' }, 'Убакыт: ' + fmt(cur.used) + ' / ' + SETS[cur.s].min + ':00'), cur.timeout ? h('span', { class: 'fact' }, 'Убакыт бүттү') : null),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn', type: 'button', onclick: () => startTest(cur.t) }, 'Кайра тапшыруу'),
+        h('button', { class: 'btn ghost', type: 'button', onclick: () => { cur.i = 0; renderQuiz(); toTop(); } }, 'Суроолорго кайтуу'),
+        cur.t < SD().length - 1 ? h('button', { class: 'btn ghost', type: 'button', onclick: () => startTest(cur.t + 1) }, 'Кийинки тест') : null)),
+    h('div', { class: 'tabs' }, tabWrong, tabAll),
+    list);
+  toTop();
+}
+
+/* ---------- Reading comprehension ---------- */
+function renderRcList() {
+  stopTimer(); setView('rc-list');
+  const best = lsGet('rc-best', {});
+  const total = RC.reduce((n, t) => n + t.questions.length, 0);
+  mount(
+    ONLY === 'all' ? h('div', { class: 'bar' }, h('button', { class: 'link', type: 'button', onclick: renderHome }, 'Башкы бет')) : null,
+    h('header', { class: 'list-head' },
+      h('h1', null, 'Окуп түшүнүү'),
+      h('p', null, RC.length + ' текст, ' + total + ' суроо. Ар бир текстке ' + RC_MIN + ' мүнөт берилет.')),
+    h('div', { class: 'tiles wide' }, RC.map((t, i) =>
+      h('div', { class: 'tile' },
+        h('div', null, h('p', { class: 'kicker' }, 'Текст'), h('p', { class: 'num' }, String(i + 1))),
+        h('h3', null, t.title),
+        h('p', { class: 'meta' }, t.questions.length + ' суроо · ' + RC_MIN + ' мүнөт'),
+        h('p', { class: 'best' }, best[i] != null ? 'Мыкты жыйынтык: ' + best[i] + ' / ' + t.questions.length : 'Али тапшырган жоксуз'),
+        h('button', { class: 'btn', type: 'button', onclick: () => renderRcIntro(i) }, best[i] != null ? 'Кайра тапшыруу' : 'Ачуу')
+      )))
+  );
+  toTop();
+}
+function renderRcIntro(i) {
+  stopTimer(); setView('rc-intro');
+  const t = RC[i];
+  mount(
+    h('div', { class: 'bar' }, h('button', { class: 'link', type: 'button', onclick: renderRcList }, 'Тексттер тизмеси'), h('p', { class: 'count' }, 'Текст ' + (i + 1))),
+    h('section', { class: 'card intro-card' },
+      h('p', { class: 'eyebrow' }, 'Окуп түшүнүү · текст ' + (i + 1)),
+      h('h1', null, t.title),
+      t.source ? h('p', { class: 'psrc' }, t.source) : null,
+      h('div', { class: 'facts' },
+        h('span', { class: 'fact' }, t.questions.length + ' суроо'),
+        h('span', { class: 'fact' }, RC_MIN + ' мүнөт'),
+        t.passages.length > 1 ? h('span', { class: 'fact' }, t.passages.length + ' үзүндү') : null),
+      h('ul', { class: 'rules' },
+        h('li', null, 'Таймер «Баштоо» баскычын басканда башталат.'),
+        h('li', null, 'Суроолор файлдагы тартип боюнча берилген. Текстте саптар номерленген, суроолор ошол номерлерге шилтеме жасайт.'),
+        h('li', null, 'Жоопту аяктаганга чейин өзгөртсөңүз болот. Убакыт бүткөндө тест автоматтык түрдө аяктайт.'),
+        h('li', null, 'Аягында ар бир суроонун туура жана ката жообу эмне үчүн экени талдоо менен чыгат.')),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn', type: 'button', onclick: () => startRc(i) }, 'Баштоо'))));
+  toTop();
+}
+
+/* passage rendering */
+function tokens(s) { return s.toLowerCase().split(/[\s«»"“”(),.;:!?…—–]+/).filter(Boolean); }
+function flowParas(p) {
+  const L = p.lines;
+  const vocab = new Set();
+  L.forEach(l => tokens(l[1]).forEach(w => vocab.add(w)));
+  const lens = L.map(l => l[1].length).sort((a, b) => a - b);
+  const med = lens[Math.floor(lens.length / 2)] || 40;
+  const paras = []; let parts = [];
+  const flush = () => { if (parts.length) { paras.push(parts); parts = []; } };
+  L.forEach((l, idx) => {
+    const n = l[0], txt = l[1];
+    const prev = idx ? L[idx - 1][1] : '';
+    let glue = ' ';
+    if (idx && /\S-$/.test(prev)) {
+      const A = (prev.match(/([^\s«»"(]+)-$/) || [])[1] || '';
+      const B = (txt.match(/^[«"(]*([^\s,.;:!?»")]+)/) || [])[1] || '';
+      const al = A.toLowerCase(), bl = B.toLowerCase();
+      if (vocab.has(al + '-' + bl)) glue = 'keep';
+      else if (vocab.has(al + bl)) glue = 'drop';
+      else if (bl.length <= 3 || /^[а-яөүң]/.test(B) && !vocab.has(bl)) glue = 'drop';
+      else glue = 'keep';
+    }
+    if (idx) {
+      if (glue === 'drop') { const last = parts[parts.length - 1]; if (typeof last === 'string') parts[parts.length - 1] = last.replace(/-$/, ''); }
+      else if (glue === 'keep') { /* join without space */ }
+      else { const last = parts[parts.length - 1]; if (typeof last === 'string') parts[parts.length - 1] = last + ' '; else parts.push(' '); }
+    }
+    if (n) parts.push({ n });
+    parts.push(txt);
+    if (/[.?!…»)]$/.test(txt.trim()) && txt.length < med * 0.8) flush();
+  });
+  flush();
+  return paras;
+}
+function passageEl(p, mode) {
+  const head = [];
+  if (p.label) head.push(h('p', { class: 'plabel' }, p.label));
+  if (p.source) head.push(h('p', { class: 'psrc' }, p.source));
+  if (p.note) head.push(h('p', { class: 'pnote' }, p.note));
+  let body;
+  if (mode === 'lines') {
+    body = h('div', { class: 'lines', tabindex: '0', role: 'region', 'aria-label': 'Текст, саптар боюнча' },
+      p.lines.map(l => h('div', { class: 'ln' }, h('span', { class: 'num' }, l[0] ? String(l[0]) : ''), h('span', { class: 'tx' }, l[1]))));
+  } else {
+    body = h('div', { class: 'flow' }, flowParas(p).map(parts =>
+      h('p', null, parts.map(x => typeof x === 'string' ? x : h('sup', { class: 'mk', 'aria-label': x.n + '-сап' }, String(x.n))))));
+  }
+  return h('div', { class: 'passage' }, head, body);
+}
+function textPane(t, onMode) {
+  const mode = rcMode();
+  const holder = h('div', { class: 'ptext' });
+  function draw() {
+    const m = rcMode();
+    holder.replaceChildren(...t.passages.map(p => passageEl(p, m)));
+  }
+  draw();
+  return h('section', { class: 'pane-text' },
+    h('div', { class: 'tools' }, h('span', { class: 'lbl' }, 'Текст')),
+    h('h2', { class: 'ptitle' }, t.title),
+    t.source ? h('p', { class: 'psrc' }, t.source) : null,
+    t.intro ? h('p', { class: 'pint' }, t.intro) : null,
+    holder);
+}
+function rcMode() {
+  return 'lines';
+}
+function rcModeOld() {
+  const m = lsGet('rc-mode', null);
+  if (m === 'lines' || m === 'flow') return m;
+  return window.matchMedia('(max-width: 599px)').matches ? 'flow' : 'lines';
+}
+
+function startRc(i) {
+  stopTimer();
+  rc = { t: i, ans: Array(RC[i].questions.length).fill(null), start: Date.now(), deadline: Date.now() + RC_MIN * 60000, finished: false, confirming: false, pane: 'text', iv: null };
+  renderRcQuiz(); toTop();
+  rc.iv = setInterval(tick, 500);
+}
+function tick() {
+  if (!rc || rc.finished) { stopTimer(); return; }
+  const left = Math.max(0, rc.deadline - Date.now());
+  const el = document.getElementById('timer');
+  if (el) {
+    el.textContent = fmt(left);
+    el.className = 'timer' + (left < 60000 ? ' bad' : left < 300000 ? ' warn' : '');
+  }
+  if (left <= 0) finishRc(true);
+}
+function measureHead() {
+  const hd = document.getElementById('rchead');
+  if (hd) document.documentElement.style.setProperty('--head-h', hd.offsetHeight + 'px');
+}
+function rcAnswered() { return rc.ans.filter(x => x !== null).length; }
+function renderRcQuiz() {
+  setView('rc-quiz');
+  const t = RC[rc.t], N = t.questions.length;
+  const body = h('div', { class: 'rc-body', 'data-pane': rc.pane });
+  const qpane = h('section', { class: 'pane-q' });
+  const qcards = t.questions.map((q, qi) => {
+    const btns = q.o.map((txt, j) => h('button', { class: 'ropt', type: 'button', 'aria-pressed': 'false', onclick: () => rcPick(qi, j) },
+      h('span', { class: 'ltr' }, LET[j]), h('span', { class: 'ot' }, txt)));
+    const card = h('div', { class: 'qcard', id: 'q' + qi },
+      h('div', { class: 'qhead' }, h('span', { class: 'qbadge' }, String(qi + 1)), h('span', { class: 'eyebrow' }, 'Суроо ' + (qi + 1))),
+      h('p', { class: 'qstem' }, q.q),
+      h('div', { class: 'ropts', role: 'group', 'aria-label': 'Жооп варианттары' }, btns));
+    card._btns = btns;
+    return card;
+  });
+  qpane.append(...qcards);
+  const swText = h('button', { type: 'button', 'aria-pressed': String(rc.pane === 'text'), onclick: () => setPane('text') }, 'Текст');
+  const swQ = h('button', { type: 'button', id: 'swq', 'aria-pressed': String(rc.pane === 'q'), onclick: () => setPane('q') }, 'Суроолор');
+  function setPane(p) {
+    rc.pane = p; body.dataset.pane = p;
+    swText.setAttribute('aria-pressed', String(p === 'text')); swQ.setAttribute('aria-pressed', String(p === 'q'));
+    toTop();
+  }
+  const finishBtn = h('button', { class: 'btn sm', type: 'button', id: 'finbtn', onclick: onFinish }, 'Аяктоо');
+  const confirmHolder = h('div', { id: 'confirm' });
+  const exitBtn = h('button', { class: 'link', type: 'button', onclick: () => {
+    if (!rc.exitAsk) { rc.exitAsk = true; exitBtn.textContent = 'Чыгуу? Дагы бир жолу басыңыз'; setTimeout(() => { if (rc) { rc.exitAsk = false; exitBtn.textContent = 'Чыгуу'; } }, 4000); return; }
+    stopTimer(); renderRcList();
+  } }, 'Чыгуу');
+  const left = Math.max(0, rc.deadline - Date.now());
+  const head = h('header', { class: 'rc-head', id: 'rchead' },
+    h('div', { class: 'rc-row' },
+      exitBtn,
+      h('p', { class: 'count', id: 'cnt' }),
+      h('div', { class: 'timer' + (left < 60000 ? ' bad' : left < 300000 ? ' warn' : ''), id: 'timer', role: 'timer', 'aria-label': 'Калган убакыт' }, fmt(left)),
+      finishBtn),
+    h('p', { class: 'rc-title' }, 'Текст ' + (rc.t + 1) + '. ' + t.title),
+    h('div', { class: 'rc-switch' }, h('div', { class: 'seg', role: 'group', 'aria-label': 'Бөлүк' }, swText, swQ)),
+    confirmHolder);
+  body.append(textPane(t), qpane);
+  mount(head, body);
+  rc.ui = { qcards, finishBtn, confirmHolder };
+  updateRcCounts();
+  qcards.forEach((c, qi) => refreshCard(qi));
+  measureHead();
+}
+function updateRcCounts() {
+  const N = RC[rc.t].questions.length, a = rcAnswered();
+  const c = document.getElementById('cnt'); if (c) c.textContent = a + ' / ' + N + ' жооп';
+  const sq = document.getElementById('swq'); if (sq) sq.textContent = 'Суроолор · ' + a + '/' + N;
+}
+function refreshCard(qi) {
+  const card = rc.ui.qcards[qi], a = rc.ans[qi];
+  card.classList.toggle('done', a !== null);
+  card._btns.forEach((b, j) => { const on = a === j; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); });
+}
+function rcPick(qi, j) {
+  if (rc.finished) return;
+  rc.ans[qi] = rc.ans[qi] === j ? null : j;
+  refreshCard(qi); updateRcCounts();
+  if (rc.confirming) { rc.confirming = false; rc.ui.confirmHolder.replaceChildren(); measureHead(); }
+}
+function onFinish() {
+  const N = RC[rc.t].questions.length, left = N - rcAnswered();
+  if (left > 0 && !rc.confirming) {
+    rc.confirming = true;
+    const idx = rc.ans.map((a, i) => a === null ? i + 1 : null).filter(Boolean).join(', ');
+    rc.ui.confirmHolder.replaceChildren(h('div', { class: 'confirm', role: 'alert' },
+      h('p', null, 'Жооп берилбеген суроолор: ' + idx + '. Аяктайсызбы?'),
+      h('button', { class: 'btn sm ghost', type: 'button', onclick: () => { rc.confirming = false; rc.ui.confirmHolder.replaceChildren(); measureHead(); } }, 'Улантуу'),
+      h('button', { class: 'btn sm', type: 'button', onclick: () => finishRc(false) }, 'Аяктоо')));
+    measureHead();
+    return;
+  }
+  finishRc(false);
+}
+function isOk(q, a) { return a !== null && (a === q.k || (q.alt || []).includes(a)); }
+function finishRc(timeout) {
+  if (!rc || rc.finished) return;
+  rc.finished = true; stopTimer();
+  rc.used = Math.min(RC_MIN * 60000, Date.now() - rc.start);
+  rc.timeout = timeout;
+  rc.score = RC[rc.t].questions.reduce((n, q, j) => n + (isOk(q, rc.ans[j]) ? 1 : 0), 0);
+  saveBest('rc-best', rc.t, rc.score);
+  rcFilter = 'all';
+  renderRcResult(); toTop();
+}
+function optReview(q, j, a) {
+  const alt = (q.alt || []).includes(j), key = j === q.k;
+  const correct = key || alt;
+  let cls = 'ropt', tag = null;
+  if (correct) {
+    cls += ' ok';
+    if ((q.alt || []).length) tag = key ? (a === j ? 'Сиздин жооп. Ачкычтагы жооп' : 'Ачкычтагы жооп') : (a === j ? 'Сиздин жооп. Текст боюнча туура' : 'Текст боюнча туура');
+    else tag = a === j ? 'Сиздин жооп, туура' : 'Туура жооп';
+  } else if (a === j) { cls += ' bad'; tag = 'Сиздин жооп, ката'; }
+  return h('div', { class: cls },
+    h('span', { class: 'ltr' }, LET[j]), h('span', { class: 'ot' }, q.o[j]),
+    tag ? h('span', { class: 'tag' }, tag) : null,
+    q.x[j] ? h('span', { class: 'rs' }, q.x[j]) : null);
+}
+function renderRcResult() {
+  setView('rc-result');
+  const t = RC[rc.t], N = t.questions.length, score = rc.score;
+  const pct = Math.round(score / N * 100);
+  const skipped = rc.ans.filter(x => x === null).length;
+  const msg = pct >= 90 ? 'Эң сонун натыйжа.' : pct >= 70 ? 'Жакшы натыйжа. Каталарды талдоодон карап чыгыңыз.' : pct >= 50 ? 'Орточо. Ката кеткен суроолордогу түшүндүрмөнү окуңуз.' : 'Тексттин саптарына кайрылып, талдоону окуңуз.';
+  const list = h('div', { class: 'rev' });
+  function fill() {
+    const items = t.questions.map((q, j) => ({ q, j })).filter(({ q, j }) => rcFilter === 'all' || !isOk(q, rc.ans[j]));
+    list.replaceChildren(...items.map(({ q, j }) => {
+      const a = rc.ans[j], ok = isOk(q, a);
+      const chip = a === null ? h('span', { class: 'chip skip' }, 'Жооп берилген жок') : h('span', { class: 'chip ' + (ok ? 'ok' : 'bad') }, ok ? 'Туура' : 'Ката');
+      const short = q.q.split('\n')[0];
+      return h('details', { class: 'item', open: !ok },
+        h('summary', null, h('span', { class: 'qn' }, String(j + 1)), h('span', { class: 'qstem' }, short.length > 110 ? short.slice(0, 107) + '…' : short), chip),
+        h('div', { class: 'body' },
+          h('p', { class: 'qstem' }, q.q),
+          h('div', { class: 'ropts' }, q.o.map((_, k) => optReview(q, k, a))),
+          h('div', { class: 'exp' }, h('p', { class: 'why-h' }, 'Эмне үчүн?'), h('p', { class: 'why' }, q.e)),
+          q.w ? h('p', { class: 'note warn' }, h('b', null, 'Көңүл буруңуз. '), q.w) : null,
+          q.i ? h('p', { class: 'note' }, h('b', null, 'Эскертүү. '), q.i) : null));
+    }));
+    if (!list.children.length) list.append(h('p', { class: 'note' }, 'Каталар жок. Бардык суроого туура жооп бердиңиз.'));
+  }
+  const tabAll = h('button', { class: 'tab', type: 'button', onclick: () => set('all') }, 'Бардык суроолор');
+  const tabWrong = h('button', { class: 'tab', type: 'button', onclick: () => set('wrong') }, 'Каталар жана жоопсуздар');
+  function set(f) { rcFilter = f; tabAll.setAttribute('aria-pressed', String(f === 'all')); tabWrong.setAttribute('aria-pressed', String(f === 'wrong')); fill(); }
+  set(rcFilter);
+  const okList = t.questions.map((q, j) => isOk(q, rc.ans[j]) ? j + 1 : null).filter(Boolean);
+  const badList = t.questions.map((q, j) => !isOk(q, rc.ans[j]) ? j + 1 : null).filter(Boolean);
+  mount(
+    h('div', { class: 'bar' }, h('button', { class: 'link', type: 'button', onclick: renderRcList }, 'Тексттер тизмеси'), h('p', { class: 'count' }, 'Текст ' + (rc.t + 1))),
+    h('section', { class: 'score' },
+      h('p', { class: 'kicker' }, 'Жыйынтык · ' + t.title),
+      h('p', { class: 'big' }, score + ' / ' + N),
+      h('div', { class: 'meter', role: 'img', 'aria-label': pct + ' пайыз' }, h('i', { style: 'width:' + pct + '%' })),
+      h('p', null, pct + '% туура. ' + msg),
+      h('div', { class: 'facts' },
+        h('span', { class: 'fact' }, 'Убакыт: ' + fmt(rc.used) + ' / ' + RC_MIN + ':00'),
+        rc.timeout ? h('span', { class: 'fact' }, 'Убакыт бүттү') : null,
+        skipped ? h('span', { class: 'fact' }, 'Жоопсуз: ' + skipped) : null),
+      h('p', { class: 'meta' }, 'Туура: ' + (okList.join(', ') || '—') + '. Ката же жоопсуз: ' + (badList.join(', ') || '—') + '.'),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn', type: 'button', onclick: () => startRc(rc.t) }, 'Кайра тапшыруу'),
+        rc.t < RC.length - 1 ? h('button', { class: 'btn ghost', type: 'button', onclick: () => renderRcIntro(rc.t + 1) }, 'Кийинки текст') : null,
+        h('button', { class: 'btn ghost', type: 'button', onclick: renderRcList }, 'Тексттер тизмеси'))),
+    h('details', { class: 'review-text' },
+      h('summary', null, 'Текстти кайра окуу (сап номерлери менен)'),
+      textPane(t)),
+    h('h2', { class: 'ptitle' }, 'Талдоо'),
+    h('div', { class: 'tabs' }, tabAll, tabWrong),
+    list);
+}
+
+window.addEventListener('resize', () => { if (view === 'rc-quiz') measureHead(); });
+renderGate();
+</script>
+</html>
